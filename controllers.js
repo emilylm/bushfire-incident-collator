@@ -8,7 +8,7 @@ const url1 = "http://www.mocky.io/v2/5e0ef86f34000088002d7dce";
 
 const url2 = "https://data.emergency.vic.gov.au/Show?pageId=getIncidentJSON";
 /*
-MOCK API to prevent over-using the CFA api during development:
+MOCK API to prevent over-using the VIC CFA api during development:
 const url2 = "http://www.mocky.io/v2/5e0ee7c83400000d002d7d67";
 */
 
@@ -32,7 +32,36 @@ exports.aggregateStates = async (req, res) => {
   res.json({'currentFires': stats})
 };
 
-getStatesData = async (url1, url2) => {
+
+// Function to fetch data from VIC CFA
+
+const getVICData = async url => {
+  try {
+    const response = await axios.get(url);
+    const data = response.data.results;
+    const stats = parseVICData(data)
+    console.log("Data fetched length:", Object.entries(data).length);
+    return stats
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+//function to fetch NSW RFS
+const getNSWData = async url => {
+  try {
+    const response = await axios.get(url);
+    const data = response.data.features;
+    const stats = parseNSWData(data)
+    console.log("Data fetched length:", Object.entries(data).length);
+    return stats
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+//function to fetch NSW and VIC data
+const getStatesData = async (url1, url2) => {
   try {
     const resNSW = await axios.get(url1)
     const data1 = resNSW.data.features
@@ -48,19 +77,8 @@ getStatesData = async (url1, url2) => {
 }
 
 
-const getNSWData = async url => {
-  try {
-    const response = await axios.get(url);
-    const data = response.data.features;
-    const stats = parseNSWData(data)
-    console.log("Data fetched length:", Object.entries(data).length);
-    return stats
-  } catch (error) {
-    console.log(error);
-  }
-}
 
-
+//function to aggregate data fetched from VIC CFA and NSW RFA
 const aggregateStates = (nsw, vic) => {
   console.log("VICCCCC", JSON.stringify(vic))
   console.log("NSWWWWWWWW", JSON.stringify(nsw))
@@ -69,17 +87,16 @@ const aggregateStates = (nsw, vic) => {
   const countBushfires = vic.count.wildfire + nsw.count.wildfire
   const countAll = vic.count.total + nsw.count.total
   const nonBushfireCount = countAll - countBushfires
-  //const smallArea = vic.unquantified-fires.small-area-count
-  //const mediumAre
 
   const summary = {
     'count': {
       wildfire: countBushfires,
-      'non-wildfire': nonBushfireCount,
+      nonWildfire: nonBushfireCount,
       total: countAll
     },
     'area': {
       'total': totalSize,
+      'totalUnit': 'hectares',
       'unquantifiedFires': {
         'smallAreaCount': vic.area.unquantifiedFires.smallAreaCount,
         'mediumAreaCount': vic.area.unquantifiedFires.mediumAreaCount,
@@ -93,7 +110,7 @@ const aggregateStates = (nsw, vic) => {
   return summary
 }
 
-
+// Function to parse raw data from NSW RFA
 const parseNSWData = data => {
   let subset = []
   let countAll = 0
@@ -127,11 +144,12 @@ const parseNSWData = data => {
   const summary = {
     'count': {
       wildfire: countWildfires,
-      'nonWildfire': nonBushfireCount,
+      nonWildfire: nonBushfireCount,
       total: countAll
     },
     'area': {
       'total': totalSize,
+      'totalUnit': 'hectares',
       'unquantifiedFires': {
         'zeroAreaCount': countZero
       }
@@ -141,20 +159,9 @@ const parseNSWData = data => {
 }
 
 
-const getVICData = async url => {
-  try {
-    const response = await axios.get(url);
-    const data = response.data.results;
-    const stats = parseVICData(data)
-    console.log("Data fetched length:", Object.entries(data).length);
-    return stats
-  } catch (error) {
-    console.log(error);
-  }
-};
+// Function to parse raw data from VIC CFA
 
-
-parseVICData = data => {
+const parseVICData = data => {
   let subset = []
   let countAll = 0
   let countBushfires = 0
@@ -204,6 +211,7 @@ parseVICData = data => {
     },
     'area': {
       'total': totalSize,
+      'totalUnit': 'hectares',
       'unquantifiedFires': {
         'smallAreaCount': sizeSmall,
         'mediumAreaCount': sizeMedium,
