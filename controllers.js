@@ -1,14 +1,12 @@
 const axios = require("axios");
-const url1 = "http://www.mocky.io/v2/5e0ef86f34000088002d7dce";
 
-//const url1 = "http://www.rfs.nsw.gov.au/feeds/majorIncidents.json";
+const url1 = "http://www.rfs.nsw.gov.au/feeds/majorIncidents.json";
 /*
 MOCK API to prevent over-using the NSW RFS api during development:
 const url1 = "http://www.mocky.io/v2/5e0ef86f34000088002d7dce";
 */
-const url2 = "http://www.mocky.io/v2/5e0ee7c83400000d002d7d67";
 
-//const url2 = "https://data.emergency.vic.gov.au/Show?pageId=getIncidentJSON";
+const url2 = "https://data.emergency.vic.gov.au/Show?pageId=getIncidentJSON";
 /*
 MOCK API to prevent over-using the CFA api during development:
 const url2 = "http://www.mocky.io/v2/5e0ee7c83400000d002d7d67";
@@ -28,14 +26,6 @@ exports.aggregateVIC = async (req, res) => {
   const stats = await getVICData(url2)
   res.json({'current-fires': stats})
 };
-
-
-
-
-//let vicData = []
-//let nswData = []
-//let nonBushfireCount = countAll - countBushfires
-
 
 
 const getNSWData = async url => {
@@ -93,22 +83,6 @@ parseNSWData = data => {
       }
     }
   }
-  /*const summary = {
-    totalIncidences: countAll,
-    nonWildFireIncidences: {
-      count: nonBushfireCount
-    },
-    wildFireIncidences: {
-      count: countWildfires,
-      areaBurning: {
-        totalQuantified: totalSize,
-        unquantified: {
-          zeroCount: countZero
-        }
-      }
-    }
-  }*/
-  //console.log("SUMMARY", summary)
   return summary
 }
 
@@ -130,7 +104,6 @@ const getVICData = async url => {
 
 parseVICData = data => {
   let subset = []
-  //let sizes = []
   let countAll = 0
   let countBushfires = 0
   let sizeUnknown = 0
@@ -147,7 +120,6 @@ parseVICData = data => {
       countBushfires++
       if (item.incidentSize.match(regExp)){
         const size = parseFloat(item.incidentSize.substr(0,item.incidentSize.indexOf(' ')));
-        //sizes.push(size)
         totalSize = totalSize + size
         sizeHA++
       } else {
@@ -188,41 +160,5 @@ parseVICData = data => {
       }
     }
   }
-  /*
-  const summary = {
-    totalIncidences: countAll,
-    nonWildFireIncidences: {
-      count: nonBushfireCount
-    },
-    wildFireIncidences: {
-      count: countBushfires,
-      areaBurning: {
-        quantified: {
-          totalArea: totalSize,
-          count: sizeHA
-        },
-        unquantified: {
-          totalArea: "unknown",
-          smallCount: sizeSmall,
-          mediumCount: sizeMedium,
-          largeCount: sizeLarge,
-          unknownCount: sizeUnknown
-        }
-      }
-    }
-  }
-
-  */
-  //console.log("SUMMARY", JSON.stringify(summary))
   return summary
-/*
-  console.log("Total small:", sizeSmall)
-  console.log("Total medium:", sizeMedium)
-  console.log("Total large:", sizeLarge)
-  console.log("Total unknown:", sizeUnknown)
-  console.log("Total known:", sizeHA)
-  console.log("Totoal size of known:", totalSize)
-  console.log("Total Incidents:", countAll)
-  console.log("Total Bushfires:", countBushfires)
-*/
 }

@@ -9,7 +9,7 @@ module.exports = (app) => {
     // Retrieve NSW RFS data
     app.get('/nsw', controllers.aggregateNSW);
 
-    // Retrieve NSW RFS data
+    // Retrieve NSW + VIC aggregated data
     //app.get('/aggregate', controllers.aggregateStates);
 
 }
