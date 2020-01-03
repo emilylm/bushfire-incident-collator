@@ -18,14 +18,34 @@ const url2 = "http://www.mocky.io/v2/5e0ee7c83400000d002d7d67";
 exports.aggregateNSW = async (req, res) => {
   const stats = await getNSWData(url1)
   console.log("STATS", stats)
-  res.json({'current-fires': stats})
+  res.json({'currentFires': stats})
 };
 
 // Find a single note with a noteId
 exports.aggregateVIC = async (req, res) => {
   const stats = await getVICData(url2)
-  res.json({'current-fires': stats})
+  res.json({'currentFires': stats})
 };
+
+exports.aggregateStates = async (req, res) => {
+  const stats = await getStatesData(url1, url2)
+  res.json({'currentFires': stats})
+};
+
+getStatesData = async (url1, url2) => {
+  try {
+    const resNSW = await axios.get(url1)
+    const data1 = resNSW.data.features
+    const resVIC = await axios.get(url2)
+    const data2 = resVIC.data.results
+    const stats1 = parseNSWData(data1)
+    const stats2 = parseVICData(data2)
+    const statsAll = aggregateStates(stats1, stats2)
+    return statsAll
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 
 const getNSWData = async url => {
@@ -38,9 +58,43 @@ const getNSWData = async url => {
   } catch (error) {
     console.log(error);
   }
-};
+}
 
-parseNSWData = data => {
+
+const aggregateStates = (nsw, vic) => {
+  console.log("VICCCCC", JSON.stringify(vic))
+  console.log("NSWWWWWWWW", JSON.stringify(nsw))
+
+  const totalSize = vic.area.total + nsw.area.total
+  const countBushfires = vic.count.wildfire + nsw.count.wildfire
+  const countAll = vic.count.total + nsw.count.total
+  const nonBushfireCount = countAll - countBushfires
+  //const smallArea = vic.unquantified-fires.small-area-count
+  //const mediumAre
+
+  const summary = {
+    'count': {
+      wildfire: countBushfires,
+      'non-wildfire': nonBushfireCount,
+      total: countAll
+    },
+    'area': {
+      'total': totalSize,
+      'unquantifiedFires': {
+        'smallAreaCount': vic.area.unquantifiedFires.smallAreaCount,
+        'mediumAreaCount': vic.area.unquantifiedFires.mediumAreaCount,
+        'largeAreaCount': vic.area.unquantifiedFires.largeAreaCount,
+        'unknownAreaCount': vic.area.unquantifiedFires.unknownAreaCount,
+        'zeroAreaCount': nsw.area.unquantifiedFires.zeroAreaCount
+      }
+    }
+  }
+  console.log("SUMMARY", summary)
+  return summary
+}
+
+
+const parseNSWData = data => {
   let subset = []
   let countAll = 0
   let countWildfires = 0
@@ -73,20 +127,18 @@ parseNSWData = data => {
   const summary = {
     'count': {
       wildfire: countWildfires,
-      'non-wildfire': nonBushfireCount,
+      'nonWildfire': nonBushfireCount,
       total: countAll
     },
     'area': {
       'total': totalSize,
-      'unquantified-fires': {
-        'zero-area-count': countZero
+      'unquantifiedFires': {
+        'zeroAreaCount': countZero
       }
     }
   }
   return summary
 }
-
-
 
 
 const getVICData = async url => {
@@ -147,16 +199,16 @@ parseVICData = data => {
   const summary = {
     'count': {
       wildfire: countBushfires,
-      'non-wildfire': nonBushfireCount,
+      'nonWildfire': nonBushfireCount,
       total: countAll
     },
     'area': {
       'total': totalSize,
-      'unquantified-fires': {
-        'small-area-count': sizeSmall,
-        'medium-area-count': sizeMedium,
-        'large-area-count': sizeLarge,
-        'unknown-area-count': sizeUnknown,
+      'unquantifiedFires': {
+        'smallAreaCount': sizeSmall,
+        'mediumAreaCount': sizeMedium,
+        'largeAreaCount': sizeLarge,
+        'unknownAreaCount': sizeUnknown,
       }
     }
   }

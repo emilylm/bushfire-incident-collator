@@ -10,6 +10,6 @@ module.exports = (app) => {
     app.get('/nsw', controllers.aggregateNSW);
 
     // Retrieve NSW + VIC aggregated data
-    //app.get('/aggregate', controllers.aggregateStates);
+    app.get('/aggregate', controllers.aggregateStates);
 
 }
