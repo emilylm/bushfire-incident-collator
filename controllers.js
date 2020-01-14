@@ -9,7 +9,7 @@ generateNSWSummary } = require('./services')
 exports.getNSW = async (req, res) => {
   try {
     const stats = await findLatestNSW()
-    console.log("Finding VIC summary")
+    console.log("Finding NSW summary")
     return res.status(201).json({'currentFires': stats});
   } catch(err) {
     res.status(500).json({ error: err.message });

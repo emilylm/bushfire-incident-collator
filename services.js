@@ -3,18 +3,18 @@ const VIC = require('./models/vic')
 const axios = require("axios")
 
 //Real VIC CFA API for use in prod:
-//const url1 = "http://www.rfs.nsw.gov.au/feeds/majorIncidents.json";
+const url1 = "http://www.rfs.nsw.gov.au/feeds/majorIncidents.json";
 
 //MOCK APIs to prevent over-using the NSW RFS api during development:
 //const url1 = "http://www.mocky.io/v2/5e0ef86f34000088002d7dce";
-const url1 = "https://3991a665-e25e-456d-bea3-00ee81f00ac5.mock.pstmn.io/nsw"
+//const url1 = "https://3991a665-e25e-456d-bea3-00ee81f00ac5.mock.pstmn.io/nsw"
 
 // Real NSW RFS API for use in prod:
-//const url2 = "https://data.emergency.vic.gov.au/Show?pageId=getIncidentJSON";
+const url2 = "https://data.emergency.vic.gov.au/Show?pageId=getIncidentJSON";
 
 // MOCK APIs to prevent over-using the VIC CFA api during development:
 //const url2 = "http://www.mocky.io/v2/5e0ee7c83400000d002d7d67";
-const url2 = "https://3991a665-e25e-456d-bea3-00ee81f00ac5.mock.pstmn.io/vic"
+//const url2 = "https://3991a665-e25e-456d-bea3-00ee81f00ac5.mock.pstmn.io/vic"
 
 
 
@@ -79,7 +79,6 @@ const generateVICSummary = async () => {
 const generateNSWSummary = async () => {
   try {
     const stats = await getNSWData()
-    console.log("NSW STATS", stats)
     const nsw = new NSW(stats)
     return newNSW = await nsw.save()
   } catch (error) {

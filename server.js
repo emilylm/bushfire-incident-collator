@@ -18,6 +18,10 @@ var corsOptions = {
 }
 */
 
+// import cron module
+const cron = require('node-cron');
+
+
 // create express app
 const app = express();
 const mongoose = require('mongoose')
@@ -46,6 +50,24 @@ app.get('/', (req, res) => {
 });
 
 require('./routes.js')(app);
+
+const { generateVICSummary, generateNSWSummary } = require('./services')
+
+//schedule cron tasks
+cron.schedule('30 * * * *', async function () {
+  try {
+    const date = new Date()
+    console.log('Running Cron Job');
+    console.log('Time: ', date);
+    let vic = await generateVICSummary()
+    let nsw = await generateNSWSummary()
+    console.log('Generating Summaries')
+    console.log(await vic);
+    console.log(await nsw);
+  } catch(err) {
+    console.log('Could not generate summaries', err)
+  }
+});
 
 // listen for requests
 app.listen(3000, () => {
