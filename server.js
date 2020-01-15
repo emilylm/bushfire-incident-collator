@@ -54,7 +54,7 @@ require('./routes.js')(app);
 const { generateVICSummary, generateNSWSummary } = require('./services')
 
 //schedule cron tasks
-cron.schedule('30 * * * *', async function () {
+cron.schedule('0,30 * * * *', async function () {
   try {
     const date = new Date()
     console.log('Running Cron Job');
@@ -67,6 +67,9 @@ cron.schedule('30 * * * *', async function () {
   } catch(err) {
     console.log('Could not generate summaries', err)
   }
+},
+{
+  timezone: "Australia/Melbourne"
 });
 
 // listen for requests
