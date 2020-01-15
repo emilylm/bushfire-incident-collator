@@ -35,7 +35,7 @@ const findLatestNSWVIC = async () => {
 // Get latest valid NSW data in database
 const findLatestNSW = async () => {
   try {
-    let data = await NSW.findOne({valid: true}).sort({date: -1}).exec();
+    let data = await NSW.findOne({valid: true}).sort({dateGenerated: -1}).exec();
     if (data == null) {
       throw new Error('Could not find latest valid NSW data')
     } else {
@@ -50,7 +50,7 @@ const findLatestNSW = async () => {
 // Get latest valid VIC data in database
 const findLatestVIC = async () => {
   try {
-    let data = await VIC.findOne({valid: true}).sort({date: -1}).exec();
+    let data = await VIC.findOne({valid: true}).sort({dateGenerated: -1}).exec();
     if (data == null) {
       throw new Error('Could not find latest valid NSW data', e)
     } else {
