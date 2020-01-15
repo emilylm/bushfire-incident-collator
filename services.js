@@ -237,6 +237,9 @@ const aggregateVICNSW = (nsw, vic) => {
   const countBushfires = vic.count.wildfire + nsw.count.wildfire
   const countAll = vic.count.total + nsw.count.total
   const nonBushfireCount = countAll - countBushfires
+  const date1 = new Date(vic.dateGenerated)
+  const date2 = new Date(nsw.dateGenerated)
+  const dateGenerated = (date1 <= date2) ? date1 : date2;
 
   const summary = {
     count: {
@@ -258,10 +261,7 @@ const aggregateVICNSW = (nsw, vic) => {
         zeroAreaCount: nsw.area.unquantifiedFires.zeroAreaCount
       }
     },
-    dateGenerated: {
-      vic: vic.dateGenerated,
-      nsw: nsw.dateGenerated
-    }
+    dateGenerated: dateGenerated
   }
   return summary
 }
