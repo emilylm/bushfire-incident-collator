@@ -1,6 +1,23 @@
 const NSW = require('./models/nsw')
 const VIC = require('./models/vic')
+const MEL = require('./models/mel')
+const SYD = require('./models/syd')
+const BNE = require('./models/bne')
+const DRW = require('./models/drw')
+const CAN = require('./models/can')
+const HBA = require('./models/hba')
+const ADL = require('./models/adl')
+const PER = require('./models/per')
+
+
+
 const axios = require("axios")
+const CITIES = ["MEL", "SYD", "BNE", "ADL", "PER", "CAN", "DRW"]
+//const CITIES = ["MEL"]
+const fs = require('fs');
+
+
+
 
 //Real VIC CFA API for use in prod:
 const url1 = "http://www.rfs.nsw.gov.au/feeds/majorIncidents.json";
@@ -31,7 +48,6 @@ const findLatestNSWVIC = async () => {
   }
 }
 
-
 // Get latest valid NSW data in database
 const findLatestNSW = async () => {
   try {
@@ -61,6 +77,178 @@ const findLatestVIC = async () => {
     throw new Error(e.message)
   }
 }
+
+
+// Generate polygons for a city
+const generatePolysCity = async (vicArea, nswArea, aggArea, city) => {
+  let vic = await getPolygon(vicArea, city)
+  let nsw = await getPolygon(nswArea, city)
+  let aggregate = await getPolygon(aggArea, city)
+  //let newMEL= undefined, newSYD= undefined, newBNE= undefined, newADL= undefined, newHBA= undefined, newCAN= undefined, newPER= undefined, newDRW = undefined
+  switch(city){
+    case "MEL":
+      const mel = new MEL({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
+      return newMEL = await mel.save()
+    case "SYD":
+      const syd = new SYD({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
+      return newSYD = await syd.save()
+    case "BNE":
+      const bne = new BNE({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
+      return newBNE = await bne.save()
+    case "DRW":
+      const drw = new DRW({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
+      return newDRW = await drw.save()
+    case "PER":
+      const per = new PER({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
+      return newPER = await per.save()
+    case "HBA":
+      const hba = new HBA({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
+      return newHBA = await hba.save()
+    case "CAN":
+      const can = new CAN({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
+      return newCAN = await can.save()
+    case "ADL":
+      const adl = new ADL({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
+      return newADL = await adl.save()
+  }
+}
+
+// Generate all polygons
+const generatePolys = async (vicArea, nswArea, aggArea) => {
+  try {
+    let mel = await generatePolysCity(vicArea, nswArea, aggArea, 'MEL')
+    let syd = await generatePolysCity(vicArea, nswArea, aggArea, 'SYD')
+    let bne = await generatePolysCity(vicArea, nswArea, aggArea, 'BNE')
+    let adl = await generatePolysCity(vicArea, nswArea, aggArea, 'ADL')
+    //let hba = await generatePolysCity(vicArea, nswArea, aggArea, 'HBA')
+    let drw = await generatePolysCity(vicArea, nswArea, aggArea, 'DRW')
+    let can = await generatePolysCity(vicArea, nswArea, aggArea, 'CAN')
+    let per = await generatePolysCity(vicArea, nswArea, aggArea, 'PER')
+    //return [mel, syd, bne, adl, hba, drw, can, per]
+    return per
+    /*for(let city in CITIES){
+      new = await generatePolysCity(vicArea, nswArea, aggArea, city)
+    }*/
+  } catch (e) {
+    console.log("Error creating polygons", e)
+    throw new Error(e.message)
+  }
+}
+
+
+
+const getPolygon = async(input_area, city) => {
+
+  let max_rad = Number.MIN_VALUE;
+  let result_rad = undefined;
+
+  let max_interval = Number.MIN_VALUE;
+  let result_interval = 0;
+
+  let rawdata = fs.readFileSync('/Users/gmarshall/Desktop/layers_map/lookup_tables/data_accum_' + city + '.json');
+  let data = JSON.parse(rawdata);
+
+  for(let obj in data){
+      const area = data[obj].total
+      if ((area >= max_rad) && (area <= input_area)){
+        max_rad = area;
+        result_rad = obj
+      }
+  }
+
+
+  let next_obj = parseInt(result_rad)+1
+  let target_obj = data[next_obj]
+  let sum_area = max_rad
+  let max_int = Math.max.apply(null, Object.keys(target_obj.intervals))
+
+  for (let i = 0; i <= max_int; i++) {
+    if (i in target_obj.intervals){
+      if (sum_area + parseFloat(target_obj.intervals[i].total) > input_area){
+        break
+      } else {
+        sum_area = sum_area + parseFloat(target_obj.intervals[i].total)
+        console.log("SUM AREA:  ", sum_area)
+        if ((sum_area <= input_area) && (sum_area >= max_rad)){
+          max_rad = sum_area;
+          result_interval = i
+        }
+      }
+    }
+  }
+
+  console.log("AREA: ", max_rad)
+
+  let next_int = parseInt(result_interval) + 1
+
+  let residual_area = input_area - max_rad
+  console.log("RESIDUAL AREA: ", residual_area)
+
+  while(next_int < 12){
+    if (next_int.toString() in target_obj.intervals){
+      break
+    } else {
+      next_int = next_int + 1
+    }
+  }
+
+  let target_orders = {}
+  let int_sum = 0
+  if (next_int == target_obj.intervals.length){
+    target_orders = target_obj.intervals[next_int].polys
+  } else {
+    for(let ord_obj in target_obj.intervals[next_int].polys){
+      const area = target_obj.intervals[next_int].polys[ord_obj]
+      if(int_sum + area <= residual_area){
+        int_sum = int_sum + area
+        target_orders[ord_obj] = target_obj.intervals[next_int].polys[ord_obj]
+      }
+    }
+  }
+
+  let path1 = '/Users/gmarshall/Desktop/layers_map/lookup_tables/clean_dissolved/' + city + '_' + result_rad.toString() + '_clean.geojson'
+  let path2 = '/Users/gmarshall/Desktop/layers_map/lookup_tables/clean_intervals/' + city + '_' + next_obj.toString()  + '_clean.geojson'
+  let big_poly = fs.readFileSync(path1);
+  let big_data = JSON.parse(big_poly);
+  let int_poly = fs.readFileSync(path2);
+  let int_data = JSON.parse(int_poly);
+
+  console.log("Loaded " + big_data.features.length + " dissolve features")
+  console.log("Loaded " + int_data.features.length + " interval features")
+
+  var turf = require('@turf/turf');
+
+
+  let features_union = []
+
+  for (var feature in int_data.features){
+    let property = 'RAD_' + city
+    let rad = int_data.features[feature].properties[property]
+    let ord = int_data.features[feature].properties.ORD_PREV
+    if ((parseInt(ord) <= result_interval) || ((parseInt(ord) == next_int) && (int_data.features[feature].properties.SSC_CODE16 in target_orders))){
+      features_union.push(int_data.features[feature])
+    }
+  }
+  big_data.features = big_data.features.concat(features_union)
+
+  var union_data = turf.union(...big_data.features)
+
+  var options = {tolerance: 0.005, highQuality: false};
+  var simplified = turf.simplify(union_data, options);
+
+  fs.appendFile('/Users/gmarshall/Desktop/layers_map/lookup_tables/' + city + '_new.geojson', JSON.stringify(simplified), function (err) {
+    if (err) throw err;
+  });
+
+
+  console.log("COMPLETE")
+
+  return simplified
+
+}
+
+
+
 
 
 // Generate VIC Summary
@@ -266,10 +454,13 @@ const aggregateVICNSW = (nsw, vic) => {
   return summary
 }
 
+
+
 module.exports = {
   findLatestNSWVIC,
   findLatestNSW,
   findLatestVIC,
   generateVICSummary,
-  generateNSWSummary
+  generateNSWSummary,
+  generatePolys
 }

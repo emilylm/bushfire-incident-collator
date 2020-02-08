@@ -26,7 +26,7 @@ const cron = require('node-cron');
 const app = express();
 const mongoose = require('mongoose')
 
-mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true })
 const db = mongoose.connection
 db.on('error', (error) => console.error(error))
 db.once('open', () => console.log('connected to database'))
@@ -51,10 +51,10 @@ app.get('/', (req, res) => {
 
 require('./routes.js')(app);
 
-const { generateVICSummary, generateNSWSummary } = require('./services')
+const { generateVICSummary, generateNSWSummary, generatePolys } = require('./services')
 
 //schedule cron tasks
-cron.schedule('0,30 * * * *', async function () {
+cron.schedule('20 6 * * * *', async function () {
   try {
     const date = new Date()
     console.log('Running Cron Job');
@@ -64,6 +64,14 @@ cron.schedule('0,30 * * * *', async function () {
     console.log('Generating Summaries')
     console.log(await vic);
     console.log(await nsw);
+    vicArea = vic.area.total;
+    nswArea = nsw.area.total;
+    aggArea = vicArea + nswArea;
+    console.log("AREAS: ", vicArea, nswArea, aggArea)
+    let polys = await generatePolys(vicArea, nswArea, aggArea);
+    console.log("Saved polygons for" + JSON.stringify(polys.length) + " cities")
+    //console.log("mel_result_nsw: " + JSON.stringify(polys.MEL.nsw))
+    //console.log("mel_result_agg: " + JSON.stringify(polys.MEL.aggregate))
   } catch(err) {
     console.log('Could not generate summaries', err)
   }
