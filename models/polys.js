@@ -1,15 +1,19 @@
 const mongoose = require('mongoose')
 
 
-const polySchema = new mongoose.Schema({
+const polysSchema = new mongoose.Schema({
+  dateGenerated: {
+    type: Date,
+    default: Date.now
+  },
+  valid: {
+    type: Boolean,
+    required: true
+  },
   MEL: {
     vic: { type: mongoose.Schema.Types.Mixed, default: {} },
     nsw: { type: mongoose.Schema.Types.Mixed, default: {} },
     aggregate: { type: mongoose.Schema.Types.Mixed, default: {} },
-    dateGenerated: {
-      type: Date,
-      default: Date.now
-    },
     valid: {
       type: Boolean,
       required: true
@@ -19,10 +23,6 @@ const polySchema = new mongoose.Schema({
     vic: { type: mongoose.Schema.Types.Mixed, default: {} },
     nsw: { type: mongoose.Schema.Types.Mixed, default: {} },
     aggregate: { type: mongoose.Schema.Types.Mixed, default: {} },
-    dateGenerated: {
-      type: Date,
-      default: Date.now
-    },
     valid: {
       type: Boolean,
       required: true
@@ -32,10 +32,6 @@ const polySchema = new mongoose.Schema({
     vic: { type: mongoose.Schema.Types.Mixed, default: {} },
     nsw: { type: mongoose.Schema.Types.Mixed, default: {} },
     aggregate: { type: mongoose.Schema.Types.Mixed, default: {} },
-    dateGenerated: {
-      type: Date,
-      default: Date.now
-    },
     valid: {
       type: Boolean,
       required: true
@@ -45,10 +41,6 @@ const polySchema = new mongoose.Schema({
     vic: { type: mongoose.Schema.Types.Mixed, default: {} },
     nsw: { type: mongoose.Schema.Types.Mixed, default: {} },
     aggregate: { type: mongoose.Schema.Types.Mixed, default: {} },
-    dateGenerated: {
-      type: Date,
-      default: Date.now
-    },
     valid: {
       type: Boolean,
       required: true
@@ -58,10 +50,6 @@ const polySchema = new mongoose.Schema({
     vic: { type: mongoose.Schema.Types.Mixed, default: {} },
     nsw: { type: mongoose.Schema.Types.Mixed, default: {} },
     aggregate: { type: mongoose.Schema.Types.Mixed, default: {} },
-    dateGenerated: {
-      type: Date,
-      default: Date.now
-    },
     valid: {
       type: Boolean,
       required: true
@@ -71,10 +59,6 @@ const polySchema = new mongoose.Schema({
     vic: { type: mongoose.Schema.Types.Mixed, default: {} },
     nsw: { type: mongoose.Schema.Types.Mixed, default: {} },
     aggregate: { type: mongoose.Schema.Types.Mixed, default: {} },
-    dateGenerated: {
-      type: Date,
-      default: Date.now
-    },
     valid: {
       type: Boolean,
       required: true
@@ -84,10 +68,6 @@ const polySchema = new mongoose.Schema({
     vic: { type: mongoose.Schema.Types.Mixed, default: {} },
     nsw: { type: mongoose.Schema.Types.Mixed, default: {} },
     aggregate: { type: mongoose.Schema.Types.Mixed, default: {} },
-    dateGenerated: {
-      type: Date,
-      default: Date.now
-    },
     valid: {
       type: Boolean,
       required: true
@@ -97,10 +77,6 @@ const polySchema = new mongoose.Schema({
     vic: { type: mongoose.Schema.Types.Mixed, default: {} },
     nsw: { type: mongoose.Schema.Types.Mixed, default: {} },
     aggregate: { type: mongoose.Schema.Types.Mixed, default: {} },
-    dateGenerated: {
-      type: Date,
-      default: Date.now
-    },
     valid: {
       type: Boolean,
       required: true
@@ -109,4 +85,4 @@ const polySchema = new mongoose.Schema({
 }, { minimize: false })
 
 
-module.exports = mongoose.model('MEL', melSchema)
+module.exports = mongoose.model('POLYS', polysSchema)

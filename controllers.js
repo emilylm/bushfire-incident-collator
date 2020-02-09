@@ -3,8 +3,19 @@ findLatestNSW,
 findLatestVIC,
 generateVICSummary,
 generateNSWSummary,
-generatePolys } = require('./services')
+generatePolys,
+getLatestPolys } = require('./services')
 
+
+exports.getPolys = async (req, res) => {
+  try {
+    const polys = await getLatestPolys()
+    console.log("Finding latest polys")
+    return res.status(201).json(polys);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
 // Retrieve and return all notes from the database.
 exports.getNSW = async (req, res) => {

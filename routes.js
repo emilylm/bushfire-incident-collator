@@ -18,4 +18,7 @@ module.exports = (app) => {
     // Generate VIC data
     app.get('/generate/nsw', controllers.generateNSW);
 
+    // Get polys
+    app.get('/polys', controllers.getPolys);
+
 }

@@ -54,7 +54,7 @@ require('./routes.js')(app);
 const { generateVICSummary, generateNSWSummary, generatePolys } = require('./services')
 
 //schedule cron tasks
-cron.schedule('20 6 * * * *', async function () {
+cron.schedule('0 * * * *', async function () {
   try {
     const date = new Date()
     console.log('Running Cron Job');

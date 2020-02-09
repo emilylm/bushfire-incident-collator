@@ -8,12 +8,14 @@ const CAN = require('./models/can')
 const HBA = require('./models/hba')
 const ADL = require('./models/adl')
 const PER = require('./models/per')
+const POLYS = require('./models/polys')
+const DISS_SHAS = require('./diss-shas');
+const INT_SHAS = require('./int-shas');
 
 
 
 const axios = require("axios")
-const CITIES = ["MEL", "SYD", "BNE", "ADL", "PER", "CAN", "DRW"]
-//const CITIES = ["MEL"]
+//const CITIES = ["MEL", "SYD", "BNE", "ADL", "PER", "CAN", "DRW", "HBA"]
 const fs = require('fs');
 
 
@@ -79,6 +81,21 @@ const findLatestVIC = async () => {
 }
 
 
+
+const getLatestPolys = async () => {
+  try {
+    let polys = await POLYS.findOne({valid: true}).sort({dateGenerated: -1}).exec();
+    if (polys.MEL == null || polys.SYD == null || polys.DRW == null || polys.ADL == null  || polys.BNE == null || polys.HBA == null || polys.PER == null || polys.CAN == null) {
+      throw new Error('Could not find all polygons', e)
+    } else {
+      return polys;
+    }
+  }
+  catch(e) {
+    throw new Error(e.message)
+  }
+}
+
 // Generate polygons for a city
 const generatePolysCity = async (vicArea, nswArea, aggArea, city) => {
   let vic = await getPolygon(vicArea, city)
@@ -87,29 +104,21 @@ const generatePolysCity = async (vicArea, nswArea, aggArea, city) => {
   //let newMEL= undefined, newSYD= undefined, newBNE= undefined, newADL= undefined, newHBA= undefined, newCAN= undefined, newPER= undefined, newDRW = undefined
   switch(city){
     case "MEL":
-      const mel = new MEL({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
-      return newMEL = await mel.save()
+      return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
     case "SYD":
-      const syd = new SYD({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
-      return newSYD = await syd.save()
+      return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
     case "BNE":
-      const bne = new BNE({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
-      return newBNE = await bne.save()
+      return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
     case "DRW":
-      const drw = new DRW({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
-      return newDRW = await drw.save()
+      return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
     case "PER":
-      const per = new PER({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
-      return newPER = await per.save()
+      return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
     case "HBA":
-      const hba = new HBA({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
-      return newHBA = await hba.save()
+      return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
     case "CAN":
-      const can = new CAN({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
-      return newCAN = await can.save()
+      return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
     case "ADL":
-      const adl = new ADL({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
-      return newADL = await adl.save()
+      return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
   }
 }
 
@@ -120,12 +129,13 @@ const generatePolys = async (vicArea, nswArea, aggArea) => {
     let syd = await generatePolysCity(vicArea, nswArea, aggArea, 'SYD')
     let bne = await generatePolysCity(vicArea, nswArea, aggArea, 'BNE')
     let adl = await generatePolysCity(vicArea, nswArea, aggArea, 'ADL')
-    //let hba = await generatePolysCity(vicArea, nswArea, aggArea, 'HBA')
+    let hba = await generatePolysCity(vicArea, nswArea, aggArea, 'HBA')
     let drw = await generatePolysCity(vicArea, nswArea, aggArea, 'DRW')
     let can = await generatePolysCity(vicArea, nswArea, aggArea, 'CAN')
     let per = await generatePolysCity(vicArea, nswArea, aggArea, 'PER')
     //return [mel, syd, bne, adl, hba, drw, can, per]
-    return per
+    let polys = new POLYS({valid: true, MEL: mel, SYD: syd, PER: per, ADL: adl, HBA: hba, CAN: can, BNE: bne, DRW: drw})
+    return await polys.save()
     /*for(let city in CITIES){
       new = await generatePolysCity(vicArea, nswArea, aggArea, city)
     }*/
@@ -136,7 +146,6 @@ const generatePolys = async (vicArea, nswArea, aggArea) => {
 }
 
 
-
 const getPolygon = async(input_area, city) => {
 
   let max_rad = Number.MIN_VALUE;
@@ -145,8 +154,15 @@ const getPolygon = async(input_area, city) => {
   let max_interval = Number.MIN_VALUE;
   let result_interval = 0;
 
-  let rawdata = fs.readFileSync('/Users/gmarshall/Desktop/layers_map/lookup_tables/data_accum_' + city + '.json');
-  let data = JSON.parse(rawdata);
+  const path1 = "https://api.github.com/repos/emilylm/aus-ssc-polygons/contents/tables/" + city + ".json"
+  const rawdata = await axios.get(path1, {headers: {"Accept":"application/vnd.github.v3.raw"}, auth: {
+      username: 'emilylm',
+      password: '6babee7b5df0fc04adbba8c8436c4cadbe423284'
+    }})
+  let dataJ = JSON.stringify(rawdata.data)
+  //console.log("DATA: ", dataJ)
+
+  let data = JSON.parse(dataJ);
 
   for(let obj in data){
       const area = data[obj].total
@@ -168,7 +184,7 @@ const getPolygon = async(input_area, city) => {
         break
       } else {
         sum_area = sum_area + parseFloat(target_obj.intervals[i].total)
-        console.log("SUM AREA:  ", sum_area)
+        //console.log("SUM AREA:  ", sum_area)
         if ((sum_area <= input_area) && (sum_area >= max_rad)){
           max_rad = sum_area;
           result_interval = i
@@ -206,12 +222,32 @@ const getPolygon = async(input_area, city) => {
     }
   }
 
-  let path1 = '/Users/gmarshall/Desktop/layers_map/lookup_tables/clean_dissolved/' + city + '_' + result_rad.toString() + '_clean.geojson'
-  let path2 = '/Users/gmarshall/Desktop/layers_map/lookup_tables/clean_intervals/' + city + '_' + next_obj.toString()  + '_clean.geojson'
-  let big_poly = fs.readFileSync(path1);
-  let big_data = JSON.parse(big_poly);
-  let int_poly = fs.readFileSync(path2);
-  let int_data = JSON.parse(int_poly);
+
+  // GET AXIOS
+  let diss_str = city + '_' + result_rad.toString() + '_clean.geojson'
+  let int_str = city + '_' + next_obj.toString()  + '_clean.geojson'
+
+  let diss_sha = DISS_SHAS[diss_str]
+  let int_sha = INT_SHAS[int_str]
+
+  let path2 = 'https://api.github.com/repos/emilylm/aus-ssc-polygons/git/blobs/' + diss_sha
+  let path3 = 'https://api.github.com/repos/emilylm/aus-ssc-polygons/git/blobs/' + int_sha
+  const big_poly = await axios.get(path2, {headers: {"Accept":"application/vnd.github.v3.raw"}, auth: {
+      username: 'emilylm',
+      password: '6babee7b5df0fc04adbba8c8436c4cadbe423284'
+    }})
+  const int_poly = await axios.get(path3, {headers: {"Accept":"application/vnd.github.v3.raw"}, auth: {
+      username: 'emilylm',
+      password: '6babee7b5df0fc04adbba8c8436c4cadbe423284'
+    }})
+  let bigD = JSON.stringify(big_poly.data)
+  let intD = JSON.stringify(int_poly.data);
+  //let path1 = '/Users/gmarshall/Desktop/layers_map/lookup_tables/clean_dissolved/' + city + '_' + result_rad.toString() + '_clean.geojson'
+  //let path2 = '/Users/gmarshall/Desktop/layers_map/lookup_tables/clean_intervals/' + city + '_' + next_obj.toString()  + '_clean.geojson'
+  //let big_poly = fs.readFileSync(path1);
+  let big_data = JSON.parse(bigD);
+  //let int_poly = fs.readFileSync(path2);
+  let int_data = JSON.parse(intD);
 
   console.log("Loaded " + big_data.features.length + " dissolve features")
   console.log("Loaded " + int_data.features.length + " interval features")
@@ -236,19 +272,11 @@ const getPolygon = async(input_area, city) => {
   var options = {tolerance: 0.005, highQuality: false};
   var simplified = turf.simplify(union_data, options);
 
-  fs.appendFile('/Users/gmarshall/Desktop/layers_map/lookup_tables/' + city + '_new.geojson', JSON.stringify(simplified), function (err) {
-    if (err) throw err;
-  });
-
-
   console.log("COMPLETE")
 
   return simplified
 
 }
-
-
-
 
 
 // Generate VIC Summary
@@ -462,5 +490,6 @@ module.exports = {
   findLatestVIC,
   generateVICSummary,
   generateNSWSummary,
-  generatePolys
+  generatePolys,
+  getLatestPolys
 }
