@@ -21,4 +21,6 @@ module.exports = (app) => {
     // Get polys
     app.get('/polys', controllers.getPolys);
 
+    // Get polys mel
+    app.get('/polys/mel', controllers.getPolysMel);
 }

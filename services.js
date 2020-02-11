@@ -11,6 +11,8 @@ const PER = require('./models/per')
 const POLYS = require('./models/polys')
 const DISS_SHAS = require('./diss-shas');
 const INT_SHAS = require('./int-shas');
+require('dotenv').config()
+
 
 
 
@@ -81,10 +83,128 @@ const findLatestVIC = async () => {
 }
 
 
+const getLatestPolysMel = async () => {
+  try {
+    let mel = await MEL.findOne({valid: true}).sort({dateGenerated: -1}).exec();
+    return mel;
+  }
+  catch(e) {
+    throw new Error(e.message)
+  }
+}
+
 
 const getLatestPolys = async () => {
   try {
-    let polys = await POLYS.findOne({valid: true}).sort({dateGenerated: -1}).exec();
+    const [mel, syd, drw, adl, bne, hba, per, can] = await Promise.all([
+      MEL.findOne({valid: true}).sort({dateGenerated: -1}).exec(),
+      SYD.findOne({valid: true}).sort({dateGenerated: -1}).exec(),
+      DRW.findOne({valid: true}).sort({dateGenerated: -1}).exec(),
+      ADL.findOne({valid: true}).sort({dateGenerated: -1}).exec(),
+      BNE.findOne({valid: true}).sort({dateGenerated: -1}).exec(),
+      HBA.findOne({valid: true}).sort({dateGenerated: -1}).exec(),
+      PER.findOne({valid: true}).sort({dateGenerated: -1}).exec(),
+      CAN.findOne({valid: true}).sort({dateGenerated: -1}).exec()
+    ]);
+
+    /*
+    let mel = await MEL.findOne({valid: true}).sort({dateGenerated: -1}).exec();
+    let syd = await SYD.findOne({valid: true}).sort({dateGenerated: -1}).exec();
+    let drw = await DRW.findOne({valid: true}).sort({dateGenerated: -1}).exec();
+    let adl = await ADL.findOne({valid: true}).sort({dateGenerated: -1}).exec();
+    let bne = await BNE.findOne({valid: true}).sort({dateGenerated: -1}).exec();
+    let hba = await HBA.findOne({valid: true}).sort({dateGenerated: -1}).exec();
+    let per = await PER.findOne({valid: true}).sort({dateGenerated: -1}).exec();
+    let can = await CAN.findOne({valid: true}).sort({dateGenerated: -1}).exec();
+    */
+    let returnObj = {MEL: mel, SYD: syd, DRW: drw, ADL: adl, BNE: bne, HBA: hba, PER: per, CAN: can}
+    if (mel == null || syd == null || drw == null || adl == null  || bne == null || hba == null || per == null || can == null) {
+      throw new Error('Could not find all polygons', e)
+    } else {
+      return returnObj;
+    }
+  }
+  catch(e) {
+    throw new Error(e.message)
+  }
+}
+
+
+// Generate polygons for a city
+const generatePolysCity = async (vicArea, nswArea, aggArea, city) => {
+  let vic = await getPolygon(vicArea, city)
+  let nsw = await getPolygon(nswArea, city)
+  let aggregate = await getPolygon(aggArea, city)
+  //let newMEL= undefined, newSYD= undefined, newBNE= undefined, newADL= undefined, newHBA= undefined, newCAN= undefined, newPER= undefined, newDRW = undefined
+  switch(city){
+    case "MEL":
+      const mel = new MEL({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
+      return newMEL = await mel.save()
+    case "SYD":
+      const syd = new SYD({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
+      return newSYD = await syd.save()
+    case "BNE":
+      const bne = new BNE({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
+      return newBNE = await bne.save()
+    case "DRW":
+      const drw = new DRW({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
+      return newDRW = await drw.save()
+    case "PER":
+      const per = new PER({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
+      return newPER = await per.save()
+    case "HBA":
+      const hba = new HBA({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
+      return newHBA = await hba.save()
+    case "CAN":
+      const can = new CAN({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
+      return newCAN = await can.save()
+    case "ADL":
+      const adl = new ADL({vic: vic, nsw: nsw, aggregate: aggregate, valid: true})
+      return newADL = await adl.save()
+  }
+}
+
+// Generate all polygons
+const generatePolys = async (vicArea, nswArea, aggArea) => {
+  try {
+    const [mel, syd, drw, adl, bne, hba, per, can] = await Promise.all([
+      generatePolysCity(vicArea, nswArea, aggArea, 'MEL'),
+      generatePolysCity(vicArea, nswArea, aggArea, 'SYD'),
+      generatePolysCity(vicArea, nswArea, aggArea, 'BNE'),
+      generatePolysCity(vicArea, nswArea, aggArea, 'ADL'),
+      generatePolysCity(vicArea, nswArea, aggArea, 'HBA'),
+      generatePolysCity(vicArea, nswArea, aggArea, 'DRW'),
+      generatePolysCity(vicArea, nswArea, aggArea, 'CAN'),
+      generatePolysCity(vicArea, nswArea, aggArea, 'PER')
+    ]);
+
+    /*
+    let mel = await generatePolysCity(vicArea, nswArea, aggArea, 'MEL')
+    let syd = await generatePolysCity(vicArea, nswArea, aggArea, 'SYD')
+    let bne = await generatePolysCity(vicArea, nswArea, aggArea, 'BNE')
+    let adl = await generatePolysCity(vicArea, nswArea, aggArea, 'ADL')
+    let hba = await generatePolysCity(vicArea, nswArea, aggArea, 'HBA')
+    let drw = await generatePolysCity(vicArea, nswArea, aggArea, 'DRW')
+    let can = await generatePolysCity(vicArea, nswArea, aggArea, 'CAN')
+    let per = await generatePolysCity(vicArea, nswArea, aggArea, 'PER')
+    */
+    let returnObj = {MEL: mel, SYD: syd, DRW: drw, ADL: adl, BNE: bne, HBA: hba, PER: per, CAN: can}
+    //return [mel, syd, bne, adl, hba, drw, can, per]
+    /*for(let city in CITIES){
+      new = await generatePolysCity(vicArea, nswArea, aggArea, city)
+    }*/
+  } catch (e) {
+    console.log("Error creating polygons", e)
+    throw new Error(e.message)
+  }
+}
+
+
+
+/*
+const getLatestPolys = async () => {
+  try {
+    let polys = await POLYS.findOne().sort( { dateGenerated: -1 } ).exec();
     if (polys.MEL == null || polys.SYD == null || polys.DRW == null || polys.ADL == null  || polys.BNE == null || polys.HBA == null || polys.PER == null || polys.CAN == null) {
       throw new Error('Could not find all polygons', e)
     } else {
@@ -95,13 +215,14 @@ const getLatestPolys = async () => {
     throw new Error(e.message)
   }
 }
+*/
 
 // Generate polygons for a city
+/*
 const generatePolysCity = async (vicArea, nswArea, aggArea, city) => {
   let vic = await getPolygon(vicArea, city)
   let nsw = await getPolygon(nswArea, city)
   let aggregate = await getPolygon(aggArea, city)
-  //let newMEL= undefined, newSYD= undefined, newBNE= undefined, newADL= undefined, newHBA= undefined, newCAN= undefined, newPER= undefined, newDRW = undefined
   switch(city){
     case "MEL":
       return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
@@ -133,19 +254,15 @@ const generatePolys = async (vicArea, nswArea, aggArea) => {
     let drw = await generatePolysCity(vicArea, nswArea, aggArea, 'DRW')
     let can = await generatePolysCity(vicArea, nswArea, aggArea, 'CAN')
     let per = await generatePolysCity(vicArea, nswArea, aggArea, 'PER')
-    //return [mel, syd, bne, adl, hba, drw, can, per]
     let polys = new POLYS({valid: true, MEL: mel, SYD: syd, PER: per, ADL: adl, HBA: hba, CAN: can, BNE: bne, DRW: drw})
     return await polys.save()
-    /*for(let city in CITIES){
-      new = await generatePolysCity(vicArea, nswArea, aggArea, city)
-    }*/
   } catch (e) {
     console.log("Error creating polygons", e)
     throw new Error(e.message)
   }
 }
 
-
+*/
 const getPolygon = async(input_area, city) => {
 
   let max_rad = Number.MIN_VALUE;
@@ -153,11 +270,11 @@ const getPolygon = async(input_area, city) => {
 
   let max_interval = Number.MIN_VALUE;
   let result_interval = 0;
-
   const path1 = "https://api.github.com/repos/emilylm/aus-ssc-polygons/contents/tables/" + city + ".json"
   const rawdata = await axios.get(path1, {headers: {"Accept":"application/vnd.github.v3.raw"}, auth: {
       username: 'emilylm',
-      password: '6babee7b5df0fc04adbba8c8436c4cadbe423284'
+      password: process.env.GH_ACCESS_TOKEN
+
     }})
   let dataJ = JSON.stringify(rawdata.data)
   //console.log("DATA: ", dataJ)
@@ -234,11 +351,11 @@ const getPolygon = async(input_area, city) => {
   let path3 = 'https://api.github.com/repos/emilylm/aus-ssc-polygons/git/blobs/' + int_sha
   const big_poly = await axios.get(path2, {headers: {"Accept":"application/vnd.github.v3.raw"}, auth: {
       username: 'emilylm',
-      password: '6babee7b5df0fc04adbba8c8436c4cadbe423284'
+      password: process.env.GH_ACCESS_TOKEN
     }})
   const int_poly = await axios.get(path3, {headers: {"Accept":"application/vnd.github.v3.raw"}, auth: {
       username: 'emilylm',
-      password: '6babee7b5df0fc04adbba8c8436c4cadbe423284'
+      password: process.env.GH_ACCESS_TOKEN
     }})
   let bigD = JSON.stringify(big_poly.data)
   let intD = JSON.stringify(int_poly.data);
@@ -491,5 +608,6 @@ module.exports = {
   generateVICSummary,
   generateNSWSummary,
   generatePolys,
-  getLatestPolys
+  getLatestPolys,
+  getLatestPolysMel
 }

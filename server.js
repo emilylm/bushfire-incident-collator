@@ -54,7 +54,7 @@ require('./routes.js')(app);
 const { generateVICSummary, generateNSWSummary, generatePolys } = require('./services')
 
 //schedule cron tasks
-cron.schedule('0 * * * *', async function () {
+cron.schedule('55 10 * * * *', async function () {
   try {
     const date = new Date()
     console.log('Running Cron Job');
@@ -69,7 +69,7 @@ cron.schedule('0 * * * *', async function () {
     aggArea = vicArea + nswArea;
     console.log("AREAS: ", vicArea, nswArea, aggArea)
     let polys = await generatePolys(vicArea, nswArea, aggArea);
-    console.log("Saved polygons for" + JSON.stringify(polys.length) + " cities")
+    //console.log("Saved polygons for" + JSON.stringify(polys.length) + " cities")
     //console.log("mel_result_nsw: " + JSON.stringify(polys.MEL.nsw))
     //console.log("mel_result_agg: " + JSON.stringify(polys.MEL.aggregate))
   } catch(err) {

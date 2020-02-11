@@ -4,8 +4,19 @@ findLatestVIC,
 generateVICSummary,
 generateNSWSummary,
 generatePolys,
-getLatestPolys } = require('./services')
+getLatestPolys,
+getLatestPolysMel } = require('./services')
 
+
+exports.getPolysMel = async (req, res) => {
+  try {
+    const mel = await getLatestPolysMel()
+    console.log("Finding latest polys")
+    return res.status(201).json(mel);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+}
 
 exports.getPolys = async (req, res) => {
   try {
