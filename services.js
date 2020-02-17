@@ -9,6 +9,7 @@ const HBA = require('./models/hba')
 const ADL = require('./models/adl')
 const PER = require('./models/per')
 const POLYS = require('./models/polys')
+const BURNTPOLYS = require('./models/burntpolys')
 const DISS_SHAS = require('./diss-shas');
 const INT_SHAS = require('./int-shas');
 require('dotenv').config()
@@ -129,6 +130,70 @@ const getLatestPolys = async () => {
   }
 }
 
+
+const getLatestPolysBurnt = async () => {
+  try {
+    let polys = await BURNTPOLYS.findOne({valid: true}).sort({dateGenerated: -1}).exec();
+    if (polys.MEL == null || polys.SYD == null || polys.DRW == null || polys.ADL == null  || polys.BNE == null || polys.HBA == null || polys.PER == null || polys.CAN == null) {
+      throw new Error('Could not find all burnt polygons', e)
+    } else {
+      return polys;
+    }
+  }
+  catch(e) {
+    throw new Error(e.message)
+  }
+}
+
+
+// Generate polygons for a city
+const generatePolysBurntCity = async (vicArea, nswArea, aggArea, city) => {
+  let vic = await getPolygon(vicArea, city)
+  let nsw = await getPolygon(nswArea, city)
+  let aggregate = await getPolygon(aggArea, city)
+  //let newMEL= undefined, newSYD= undefined, newBNE= undefined, newADL= undefined, newHBA= undefined, newCAN= undefined, newPER= undefined, newDRW = undefined
+  switch(city){
+    case "MEL":
+      return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
+    case "SYD":
+      return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
+    case "BNE":
+      return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
+    case "DRW":
+      return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
+    case "PER":
+      return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
+    case "HBA":
+      return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
+    case "CAN":
+      return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
+    case "ADL":
+      return {vic: vic, nsw: nsw, aggregate: aggregate, valid: true}
+  }
+}
+
+// Generate all polygons
+const generatePolysBurnt = async (vicArea, nswArea, aggArea) => {
+  try {
+    let mel = await generatePolysBurntCity(vicArea, nswArea, aggArea, 'MEL')
+    let syd = await generatePolysBurntCity(vicArea, nswArea, aggArea, 'SYD')
+    let bne = await generatePolysBurntCity(vicArea, nswArea, aggArea, 'BNE')
+    let adl = await generatePolysBurntCity(vicArea, nswArea, aggArea, 'ADL')
+    let hba = await generatePolysBurntCity(vicArea, nswArea, aggArea, 'HBA')
+    let drw = await generatePolysBurntCity(vicArea, nswArea, aggArea, 'DRW')
+    let can = await generatePolysBurntCity(vicArea, nswArea, aggArea, 'CAN')
+    let per = await generatePolysBurntCity(vicArea, nswArea, aggArea, 'PER')
+    //return [mel, syd, bne, adl, hba, drw, can, per]
+    let polys = new BURNTPOLYS({valid: true, MEL: mel, SYD: syd, PER: per, ADL: adl, HBA: hba, CAN: can, BNE: bne, DRW: drw})
+    return await polys.save()
+    /*for(let city in CITIES){
+      new = await generatePolysCity(vicArea, nswArea, aggArea, city)
+    }*/
+  } catch (e) {
+    console.log("Error creating polygons", e)
+    throw new Error(e.message)
+  }
+}
 
 // Generate polygons for a city
 const generatePolysCity = async (vicArea, nswArea, aggArea, city) => {
@@ -271,6 +336,7 @@ const getPolygon = async(input_area, city) => {
   let max_interval = Number.MIN_VALUE;
   let result_interval = 0;
   const path1 = "https://api.github.com/repos/emilylm/aus-ssc-polygons/contents/tables/" + city + ".json"
+  console.log("PATH", path1)
   const rawdata = await axios.get(path1, {headers: {"Accept":"application/vnd.github.v3.raw"}, auth: {
       username: 'emilylm',
       password: process.env.GH_ACCESS_TOKEN
@@ -289,8 +355,16 @@ const getPolygon = async(input_area, city) => {
       }
   }
 
-
+  let max_obj = Math.max.apply(null, Object.keys(parseInt(data)))
   let next_obj = parseInt(result_rad)+1
+  while(!(next_obj in data)){
+    next_obj = next_obj + 1
+    /*
+    if (next_obj == max_obj){
+      next_obj = result_rad
+    }
+    */
+  }
   let target_obj = data[next_obj]
   let sum_area = max_rad
   let max_int = Math.max.apply(null, Object.keys(target_obj.intervals))
@@ -609,5 +683,8 @@ module.exports = {
   generateNSWSummary,
   generatePolys,
   getLatestPolys,
-  getLatestPolysMel
+  getLatestPolysMel,
+  getLatestPolysBurnt,
+  generatePolysBurntCity,
+  generatePolysBurnt
 }

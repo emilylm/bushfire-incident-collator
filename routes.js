@@ -23,4 +23,10 @@ module.exports = (app) => {
 
     // Get polys mel
     app.get('/polys/mel', controllers.getPolysMel);
+
+    // Generate burnt polys
+    app.get('/generate/polys/burnt/:vicArea/:nswArea', controllers.generatePolysBurnt);
+
+    // Get burnt polys
+    app.get('/polys/burnt', controllers.getPolysBurnt);
 }

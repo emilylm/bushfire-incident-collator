@@ -3,9 +3,34 @@ findLatestNSW,
 findLatestVIC,
 generateVICSummary,
 generateNSWSummary,
-generatePolys,
 getLatestPolys,
-getLatestPolysMel } = require('./services')
+getLatestPolysMel,
+getLatestPolysBurnt,
+generatePolysBurnt } = require('./services')
+
+
+exports.getPolysBurnt = async (req, res) => {
+  try {
+    const polys = await getLatestPolysBurnt()
+    console.log("Finding latest burnt polys")
+    return res.status(201).json(polys);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.generatePolysBurnt = async (req, res) => {
+  try {
+    let nsw = parseInt(req.params.nswArea)
+    let vic = parseInt(req.params.vicArea)
+    let agg = nsw + vic
+    const polys = await generatePolysBurnt(vic, nsw, agg)
+    console.log("Finding latest burnt polys")
+    return res.status(201).json(polys);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
 
 exports.getPolysMel = async (req, res) => {
